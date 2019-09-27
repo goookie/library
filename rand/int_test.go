@@ -3,7 +3,7 @@ package random_test
 import (
 	"testing"
 
-	. "web-layout/utils/rand"
+	. "github.com/goookie/library/rand"
 )
 
 func TestInt(t *testing.T) {

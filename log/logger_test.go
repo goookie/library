@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	. "web-layout/utils/log"
+	. "github.com/goookie/library/log"
 )
 
 func TestLogger(t *testing.T) {

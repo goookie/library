@@ -6,7 +6,7 @@ import (
 
 	"github.com/caarlos0/env"
 
-	. "web-layout/utils/smtp"
+	. "github.com/goookie/library/smtp"
 )
 
 func TestSMTP(t *testing.T) {

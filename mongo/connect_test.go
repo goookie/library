@@ -3,7 +3,7 @@ package mongo_test
 import (
 	"testing"
 
-	. "web-layout/utils/mongo"
+	. "github.com/goookie/library/mongo"
 )
 
 func TestConnect(t *testing.T) {

@@ -3,7 +3,7 @@ package mysql_test
 import (
 	"testing"
 
-	. "web-layout/utils/mysql"
+	. "github.com/goookie/library/mysql"
 )
 
 func TestModelBuilder_Build(t *testing.T) {

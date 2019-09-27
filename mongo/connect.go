@@ -16,7 +16,7 @@ const (
 
 // Cfg config for mongodb
 type Cfg struct {
-	Size          uint64
+	Size          uint16
 	Addr          []string
 	Username      string
 	Password      string

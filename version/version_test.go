@@ -3,7 +3,7 @@ package version_test
 import (
 	"testing"
 
-	"web-layout/utils/version"
+	"github.com/goookie/library/version"
 )
 
 func TestInfo_Version(t *testing.T) {

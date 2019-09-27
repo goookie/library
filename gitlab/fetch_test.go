@@ -5,7 +5,7 @@ import (
 
 	"github.com/caarlos0/env"
 
-	. "web-layout/utils/gitlab"
+	. "github.com/goookie/library/gitlab"
 )
 
 func TestCatcher_Fetch(t *testing.T) {

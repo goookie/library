@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	. "web-layout/utils/gin/gate"
+	. "github.com/goookie/library/gin/gate"
 )
 
 func main() {

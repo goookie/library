@@ -8,7 +8,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/go-redis/redis"
 
-	. "web-layout/utils/redis"
+	. "github.com/goookie/library/redis"
 )
 
 func TestConnect(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/cms"
 	"github.com/caarlos0/env"
 
-	. "web-layout/utils/aliyun/metric"
+	. "github.com/goookie/library/aliyun/metric"
 )
 
 type testClient struct {

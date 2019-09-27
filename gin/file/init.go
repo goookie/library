@@ -9,7 +9,7 @@ import (
 
 	"github.com/caarlos0/env"
 
-	. "web-layout/utils/aliyun/oss"
+	. "github.com/goookie/library/aliyun/oss"
 )
 
 var client *Client

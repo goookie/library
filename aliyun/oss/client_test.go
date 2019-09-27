@@ -3,7 +3,7 @@ package oss_test
 import (
 	"github.com/caarlos0/env"
 
-	. "web-layout/utils/aliyun/oss"
+	. "github.com/goookie/library/aliyun/oss"
 )
 
 func getClient() (*Client, error) {

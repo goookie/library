@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	. "web-layout/utils/gin/middleware/jwt"
-	. "web-layout/utils/parse"
+	. "github.com/goookie/library/gin/middleware/jwt"
+	. "github.com/goookie/library/parse"
 )
 
 func TestJWTAuth(t *testing.T) {

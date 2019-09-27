@@ -3,7 +3,7 @@ package file_test
 import (
 	"testing"
 
-	. "web-layout/utils/file"
+	. "github.com/goookie/library/file"
 )
 
 func TestDir(t *testing.T) {

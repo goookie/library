@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"web-layout/utils/consul"
+	"github.com/goookie/library/consul"
 )
 
 func main() {
