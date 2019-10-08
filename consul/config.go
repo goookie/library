@@ -1,9 +1,6 @@
 package consul
 
 import (
-	"fmt"
-
-	consulAPI "github.com/hashicorp/consul/api"
 	consulWatch "github.com/hashicorp/consul/api/watch"
 )
 
@@ -26,38 +23,33 @@ type AvailableServers struct {
 // RegistryConfig is service registry config
 type RegistryConfig struct {
 	ID         string   // service id
+	ServerType string   // service type
 	IP         string   // service addr
 	Port       int      // service port
-	ServerType string   // service type
 	Tags       []string // service Tags
 }
 
-// DiscoveryConfig is service discovery config
+// DiscoveryConfig is service watcher config
 type DiscoveryConfig struct {
 	ServerType string   // target service type
 	Tags       []string // target service tags
 	Min        int      // minimum of available in wait
-	// others
-	watchChan chan AvailableServers
-	plan      *consulWatch.Plan
 }
 
-func (discoveryConfig *DiscoveryConfig) handler(index uint64, raw interface{}) {
-	if raw == nil {
-		return
+func (discoveryConfig *DiscoveryConfig) getWatcher() (*watcher, error) {
+	// build plan
+	params := make(map[string]interface{})
+	params["type"] = "service"
+	params["service"] = discoveryConfig.ServerType
+	params["tag"] = discoveryConfig.Tags
+	plan, err := consulWatch.Parse(params)
+	if err != nil {
+		return nil, err
 	}
-	if entries, ok := raw.([]*consulAPI.ServiceEntry); ok {
-		var servers []string
-		for _, entry := range entries {
-			// healthy check fail, continue anyway
-			if entry.Checks.AggregatedStatus() != consulAPI.HealthPassing {
-				continue
-			}
-			servers = append(servers, fmt.Sprintf("%s:%d", entry.Service.Address, entry.Service.Port))
-		}
-		discoveryConfig.watchChan <- AvailableServers{
-			ServerType: discoveryConfig.ServerType,
-			Servers:    servers,
-		}
-	}
+
+	return &watcher{
+		serverType: discoveryConfig.ServerType,
+		plan:       plan,
+		noticeChan: make(chan AvailableServers, 100),
+	}, nil
 }

@@ -1,5 +1,9 @@
 package consul
 
+import (
+	"log"
+)
+
 type serviceDetail struct {
 	min     int
 	current int
@@ -19,11 +23,26 @@ func (client *Client) Wait() {
 		}
 	}
 
+	// check first
 	if allAvailable(services) {
 		return
 	}
 
-	for msg := range client.Watch() {
+	// build notice chan
+	noticeChan := make(chan AvailableServers, 100)
+	for _, sdConfig := range client.discoveryConfigs {
+		w, err := sdConfig.getWatcher()
+		if err != nil {
+			log.Fatalf("consul wait err: %v\n", err)
+		}
+		go func(noticeChan, subChan chan AvailableServers) {
+			for msg := range subChan {
+				noticeChan <- msg
+			}
+		}(noticeChan, w.noticeChan)
+	}
+
+	for msg := range noticeChan {
 		detail := services[msg.ServerType]
 		detail.current = len(msg.Servers)
 		if allAvailable(services) {

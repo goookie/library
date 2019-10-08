@@ -6,23 +6,21 @@ import (
 
 // Watch listening to the service in Consul
 func (client *Client) Watch(serverType string) <-chan AvailableServers {
-	if len(client.discoveryConfigs) == 0 {
+	sdConfig, isExist := client.discoveryConfigs[serverType]
+	if !isExist {
 		return nil
 	}
 
-	sdConfig, isExist := client.discoveryConfigs[serverType]
-	if isExist {
-		client.once.Do(func() {
-			for _, sdConfig := range client.discoveryConfigs {
-				go func(sdConfig *DiscoveryConfig) {
-					if err := sdConfig.plan.Run(client.consulAddr); err != nil {
-						log.Printf("Consul Watch Err: %+v\n", err)
-					}
-				}(sdConfig)
-			}
-		})
-		return sdConfig.watchChan
+	w, err := sdConfig.getWatcher()
+	if err != nil {
+		log.Fatalf("Consul Watch Err: %+v\n", err)
 	}
 
-	return nil
+	go func(w *watcher) {
+		if err := w.plan.Run(client.config.Address); err != nil {
+			log.Printf("Consul Watch Err: %+v\n", err)
+		}
+	}(w)
+
+	return w.noticeChan
 }

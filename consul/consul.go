@@ -1,25 +1,19 @@
 package consul
 
 import (
-	"sync"
-
 	consulAPI "github.com/hashicorp/consul/api"
-	consulWatch "github.com/hashicorp/consul/api/watch"
 )
 
 // Client defines the consul client
 type Client struct {
-	consulAddr string // consul address（127.0.0.1:8500）
+	config       *consulAPI.Config // consul config
+	consulClient *consulAPI.Client // consul Client
 
 	// service registration related
 	registryConfig *RegistryConfig
-	consulClient   *consulAPI.Client // consul Client
 
-	// service discovery related
-	once             sync.Once
+	// service watcher related
 	discoveryConfigs map[string]*DiscoveryConfig
-	//watchChan        chan AvailableServers
-	//watchChannels    map[string]chan AvailableServers
 }
 
 type ClientOption func(*Client) error
@@ -34,15 +28,15 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	return c, nil
 }
 
-func AddrOption(addr string) ClientOption {
+func AddrOption(config *consulAPI.Config) ClientOption {
 	return func(client *Client) error {
 		// service registry
-		c, err := consulAPI.NewClient(&consulAPI.Config{Address: addr})
+		c, err := consulAPI.NewClient(config)
 		if err != nil {
 			return err
 		}
 
-		client.consulAddr = addr
+		client.config = config
 		client.consulClient = c
 		return nil
 	}
@@ -57,36 +51,16 @@ func ServiceRegistryOption(registryConfig *RegistryConfig) ClientOption {
 
 func ServiceDiscoveryOption(discoveryConfigs ...*DiscoveryConfig) ClientOption {
 	return func(client *Client) error {
-		// service discovery channel
+		// service watcher channel
 		configs := make(map[string]*DiscoveryConfig, 0)
 
-		// service discovery
+		// service watcher
 		for _, sdConfig := range discoveryConfigs {
-			// build watch chan
-			watchChan := make(chan AvailableServers, 100)
-
-			// build plan
-			params := make(map[string]interface{})
-			params["type"] = "service"
-			params["service"] = sdConfig.ServerType
-			params["tag"] = sdConfig.Tags
-			plan, err := consulWatch.Parse(params)
-			if err != nil {
-				return err
-			}
-			plan.Handler = sdConfig.handler
-
-			// bind plan to DiscoveryConfig
-			sdConfig.watchChan = watchChan
-			sdConfig.plan = plan
-
-			// add to service discovery configs
+			// add to service watcher configs
 			configs[sdConfig.ServerType] = sdConfig
 		}
 
 		client.discoveryConfigs = configs
-		//client.watchChan = watchChan
-		client.once = sync.Once{}
 		return nil
 	}
 }
