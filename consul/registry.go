@@ -1,7 +1,10 @@
 package consul
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"time"
 
 	consulAPI "github.com/hashicorp/consul/api"
 )
@@ -13,6 +16,12 @@ func (client *Client) Register() error {
 	if client.registryConfig == nil {
 		return ErrAbsentServiceRegisterConfig
 	}
+
+	go func() {
+		if err := client.consulCheckServer.ListenAndServe(); err != nil {
+			log.Printf("cnosul check server start fail : %v\n", err)
+		}
+	}()
 
 	registration := new(consulAPI.AgentServiceRegistration)
 	registration.ID = client.registryConfig.ID
@@ -34,6 +43,10 @@ func (client *Client) DeRegister() error {
 	if client.registryConfig == nil {
 		return ErrAbsentServiceRegisterConfig
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	client.consulCheckServer.Shutdown(ctx)
+	defer cancel()
 
 	return client.consulClient.Agent().ServiceDeregister(client.registryConfig.ID)
 }

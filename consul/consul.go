@@ -1,6 +1,9 @@
 package consul
 
 import (
+	"fmt"
+	"net/http"
+
 	consulAPI "github.com/hashicorp/consul/api"
 )
 
@@ -10,7 +13,8 @@ type Client struct {
 	consulClient *consulAPI.Client // consul Client
 
 	// service registration related
-	registryConfig *RegistryConfig
+	registryConfig    *RegistryConfig
+	consulCheckServer *http.Server
 
 	// service watcher related
 	discoveryConfigs map[string]*DiscoveryConfig
@@ -18,8 +22,17 @@ type Client struct {
 
 type ClientOption func(*Client) error
 
-func NewClient(opts ...ClientOption) (*Client, error) {
+func NewClient(config *consulAPI.Config, opts ...ClientOption) (*Client, error) {
 	c := new(Client)
+	// service registry
+	client, err := consulAPI.NewClient(config)
+	if err != nil {
+		return nil, err
+	}
+
+	c.config = config
+	c.consulClient = client
+
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
 			return nil, err
@@ -28,23 +41,19 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	return c, nil
 }
 
-func AddrOption(config *consulAPI.Config) ClientOption {
+func ServiceRegistryOption(checkPort int, registryConfig *RegistryConfig) ClientOption {
 	return func(client *Client) error {
-		// service registry
-		c, err := consulAPI.NewClient(config)
-		if err != nil {
-			return err
+		mux := http.NewServeMux()
+		mux.HandleFunc("/check", func(w http.ResponseWriter, req *http.Request) {
+			w.Write([]byte("ok"))
+		})
+
+		client.registryConfig = registryConfig
+		client.consulCheckServer = &http.Server{
+			Addr:    fmt.Sprintf(":%d", checkPort),
+			Handler: mux,
 		}
 
-		client.config = config
-		client.consulClient = c
-		return nil
-	}
-}
-
-func ServiceRegistryOption(registryConfig *RegistryConfig) ClientOption {
-	return func(client *Client) error {
-		client.registryConfig = registryConfig
 		return nil
 	}
 }
