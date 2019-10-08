@@ -30,7 +30,7 @@ func (client *Client) Register() error {
 	registration.Address = client.registryConfig.IP
 	registration.Port = client.registryConfig.Port
 	registration.Check = &consulAPI.AgentServiceCheck{
-		HTTP:                           fmt.Sprintf("http://%s:%d%s", registration.Address, client.registryConfig.Port, "/check"),
+		HTTP:                           fmt.Sprintf("http://%s:%d%s", registration.Address, client.consulCheckPort, "/check"),
 		Timeout:                        "3s",
 		Interval:                       "5s",
 		DeregisterCriticalServiceAfter: "15s", // del this service in 15s after check fail

@@ -35,6 +35,13 @@ func (client *Client) Wait() {
 		if err != nil {
 			log.Fatalf("consul wait err: %v\n", err)
 		}
+
+		go func(w *watcher) {
+			if err := w.plan.Run(client.config.Address); err != nil {
+				log.Printf("Consul Watch Err: %+v\n", err)
+			}
+		}(w)
+
 		go func(noticeChan, subChan chan AvailableServers) {
 			for msg := range subChan {
 				noticeChan <- msg

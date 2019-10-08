@@ -37,6 +37,11 @@ type DiscoveryConfig struct {
 }
 
 func (discoveryConfig *DiscoveryConfig) getWatcher() (*watcher, error) {
+	w := &watcher{
+		serverType: discoveryConfig.ServerType,
+		noticeChan: make(chan AvailableServers, 100),
+	}
+
 	// build plan
 	params := make(map[string]interface{})
 	params["type"] = "service"
@@ -46,10 +51,8 @@ func (discoveryConfig *DiscoveryConfig) getWatcher() (*watcher, error) {
 	if err != nil {
 		return nil, err
 	}
+	plan.Handler = w.handler
 
-	return &watcher{
-		serverType: discoveryConfig.ServerType,
-		plan:       plan,
-		noticeChan: make(chan AvailableServers, 100),
-	}, nil
+	w.plan = plan
+	return w, nil
 }

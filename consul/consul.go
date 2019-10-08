@@ -15,6 +15,7 @@ type Client struct {
 	// service registration related
 	registryConfig    *RegistryConfig
 	consulCheckServer *http.Server
+	consulCheckPort   int
 
 	// service watcher related
 	discoveryConfigs map[string]*DiscoveryConfig
@@ -49,6 +50,7 @@ func ServiceRegistryOption(checkPort int, registryConfig *RegistryConfig) Client
 		})
 
 		client.registryConfig = registryConfig
+		client.consulCheckPort = checkPort
 		client.consulCheckServer = &http.Server{
 			Addr:    fmt.Sprintf(":%d", checkPort),
 			Handler: mux,
