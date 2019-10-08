@@ -1,9 +1,7 @@
 package consul
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	consulAPI "github.com/hashicorp/consul/api"
 )
@@ -16,12 +14,6 @@ func (client *Client) Register() error {
 		return ErrAbsentServiceRegisterConfig
 	}
 
-	go func() {
-		if err := client.checkServer.ListenAndServe(); err != nil {
-			fmt.Println(err)
-		}
-	}()
-
 	registration := new(consulAPI.AgentServiceRegistration)
 	registration.ID = client.registryConfig.ID
 	registration.Name = client.registryConfig.ServerType
@@ -29,7 +21,7 @@ func (client *Client) Register() error {
 	registration.Address = client.registryConfig.IP
 	registration.Port = client.registryConfig.Port
 	registration.Check = &consulAPI.AgentServiceCheck{
-		HTTP:                           fmt.Sprintf("http://%s:%d%s", registration.Address, client.checkPort, "/check"),
+		HTTP:                           fmt.Sprintf("http://%s:%d%s", registration.Address, client.registryConfig.Port, "/check"),
 		Timeout:                        "3s",
 		Interval:                       "5s",
 		DeregisterCriticalServiceAfter: "15s", // del this service in 15s after check fail
@@ -43,8 +35,5 @@ func (client *Client) DeRegister() error {
 		return ErrAbsentServiceRegisterConfig
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client.checkServer.Shutdown(ctx)
 	return client.consulClient.Agent().ServiceDeregister(client.registryConfig.ID)
 }

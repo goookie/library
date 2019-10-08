@@ -11,10 +11,10 @@ import (
 // Registration/Registration service to Consul
 // Listening to the service in Consul
 type ClientInterface interface {
-	Wait()                          // Wait for a specific service to come online
-	Register() error                // Registration service to Consul
-	DeRegister() error              // DeRegister service to Consul
-	Watch() <-chan AvailableServers // Listening to the service in Consul
+	Wait()                                           // Wait for a specific service to come online
+	Register() error                                 // Registration service to Consul
+	DeRegister() error                               // DeRegister service to Consul
+	Watch(serverType string) <-chan AvailableServers // Listening to the service in Consul
 }
 
 // AvailableServers defines available online services

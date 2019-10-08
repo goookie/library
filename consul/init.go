@@ -1,8 +1,6 @@
 package consul
 
 import (
-	"fmt"
-	"net/http"
 	"sync"
 
 	consulAPI "github.com/hashicorp/consul/api"
@@ -15,72 +13,80 @@ type Client struct {
 
 	// service registration related
 	registryConfig *RegistryConfig
-	checkPort      int // service registration check port
-	checkServer    *http.Server
 	consulClient   *consulAPI.Client // consul Client
 
 	// service discovery related
 	once             sync.Once
-	discoveryConfigs []*DiscoveryConfig
-	watchChan        chan AvailableServers
+	discoveryConfigs map[string]*DiscoveryConfig
+	//watchChan        chan AvailableServers
+	//watchChannels    map[string]chan AvailableServers
 }
 
-// NewClient is the constructor of consul Client
-func NewClient(consulAddr string) (*Client, error) {
-	// service registry
-	c, err := consulAPI.NewClient(&consulAPI.Config{Address: consulAddr})
-	if err != nil {
-		return nil, err
-	}
+type ClientOption func(*Client) error
 
-	return &Client{
-		consulAddr:   consulAddr,
-		consulClient: c,
-	}, nil
-}
-
-func (client *Client) ServiceRegistry(checkPort int, registryConfig *RegistryConfig) *Client {
-	// construct check sever
-	mux := http.NewServeMux()
-	mux.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
-	})
-
-	checkServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", checkPort),
-		Handler: mux,
-	}
-
-	client.checkPort = checkPort
-	client.checkServer = checkServer
-	client.registryConfig = registryConfig
-	return client
-}
-
-func (client *Client) ServiceDiscovery(discoveryConfigs ...*DiscoveryConfig) (*Client, error) {
-	// service discovery channel
-	watchChan := make(chan AvailableServers, 100)
-
-	// service discovery
-	for _, sdConfig := range discoveryConfigs {
-		// build plan
-		params := make(map[string]interface{})
-		params["type"] = "service"
-		params["service"] = sdConfig.ServerType
-		params["tag"] = sdConfig.Tags
-		plan, err := consulWatch.Parse(params)
-		if err != nil {
+func NewClient(opts ...ClientOption) (*Client, error) {
+	c := new(Client)
+	for _, opt := range opts {
+		if err := opt(c); err != nil {
 			return nil, err
 		}
-		plan.Handler = sdConfig.handler
-
-		// bind plan to DiscoveryConfig
-		sdConfig.watchChan = watchChan
-		sdConfig.plan = plan
 	}
+	return c, nil
+}
 
-	client.discoveryConfigs = discoveryConfigs
-	client.watchChan = watchChan
-	client.once = sync.Once{}
-	return client, nil
+func AddrOption(addr string) ClientOption {
+	return func(client *Client) error {
+		// service registry
+		c, err := consulAPI.NewClient(&consulAPI.Config{Address: addr})
+		if err != nil {
+			return err
+		}
+
+		client.consulAddr = addr
+		client.consulClient = c
+		return nil
+	}
+}
+
+func ServiceRegistryOption(registryConfig *RegistryConfig) ClientOption {
+	return func(client *Client) error {
+		client.registryConfig = registryConfig
+		return nil
+	}
+}
+
+func ServiceDiscoveryOption(discoveryConfigs ...*DiscoveryConfig) ClientOption {
+	return func(client *Client) error {
+		// service discovery channel
+		configs := make(map[string]*DiscoveryConfig, 0)
+
+		// service discovery
+		for _, sdConfig := range discoveryConfigs {
+			// build watch chan
+			watchChan := make(chan AvailableServers, 100)
+
+			// build plan
+			params := make(map[string]interface{})
+			params["type"] = "service"
+			params["service"] = sdConfig.ServerType
+			params["tag"] = sdConfig.Tags
+			plan, err := consulWatch.Parse(params)
+			if err != nil {
+				return err
+			}
+			plan.Handler = sdConfig.handler
+
+			// bind plan to DiscoveryConfig
+			sdConfig.watchChan = watchChan
+			sdConfig.plan = plan
+
+			// add to service discovery configs
+			configs[sdConfig.ServerType] = sdConfig
+		}
+
+		client.discoveryConfigs = configs
+		//client.watchChan = watchChan
+		client.once = sync.Once{}
+		return nil
+	}
 }

@@ -25,20 +25,18 @@ func main() {
 func listen() {
 	fmt.Println("开始监听服务 --- service1 & service2")
 	consulAddr := "127.0.0.1:8500"
-	r, err := consul.NewClient(consulAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	r, err = r.ServiceDiscovery(&consul.DiscoveryConfig{
-		ServerType: "service1",
-		Tags:       []string{"0.98", "QQ"},
-		Min:        1,
-	}, &consul.DiscoveryConfig{
-		ServerType: "service2",
-		Tags:       []string{"0.98", "QQ"},
-		Min:        1,
-	})
+	r, err := consul.NewClient(
+		consul.AddrOption(consulAddr),
+		consul.ServiceDiscoveryOption(&consul.DiscoveryConfig{
+			ServerType: "service1",
+			Tags:       []string{"0.98", "QQ"},
+			Min:        1,
+		}, &consul.DiscoveryConfig{
+			ServerType: "service2",
+			Tags:       []string{"0.98", "QQ"},
+			Min:        1,
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,23 +63,22 @@ func service1() {
 	const (
 		ServerType = "service1"
 		ServiceID  = ServerType + "-1"
-		checkPort  = 9000
 		consulAddr = "127.0.0.1:8500"
 	)
 
-	service := &consul.RegistryConfig{
-		IP:         "127.0.0.1",
-		ID:         ServiceID,
-		Port:       944,
-		ServerType: ServerType,
-		Tags:       []string{"0.98", "QQ"},
-	}
-	r, err := consul.NewClient(consulAddr)
+	r, err := consul.NewClient(
+		consul.AddrOption(consulAddr),
+		consul.ServiceRegistryOption(&consul.RegistryConfig{
+			IP:         "127.0.0.1",
+			ID:         ServiceID,
+			Port:       944,
+			ServerType: ServerType,
+			Tags:       []string{"0.98", "QQ"},
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	r.ServiceRegistry(checkPort, service)
 
 	fmt.Println("开始注册服务 --- ", ServerType, " 20s 之后注销服务")
 	if err := r.Register(); err != nil {
@@ -98,23 +95,22 @@ func service2() {
 	const (
 		ServerType = "service2"
 		ServiceID  = ServerType + "-1"
-		checkPort  = 9001
 		consulAddr = "127.0.0.1:8500"
 	)
 
-	service := &consul.RegistryConfig{
-		IP:         "127.0.0.1",
-		ID:         ServiceID,
-		Port:       99992,
-		ServerType: ServerType,
-		Tags:       []string{"0.98", "QQ"},
-	}
-	r, err := consul.NewClient(consulAddr)
+	r, err := consul.NewClient(
+		consul.AddrOption(consulAddr),
+		consul.ServiceRegistryOption(&consul.RegistryConfig{
+			IP:         "127.0.0.1",
+			ID:         ServiceID,
+			Port:       99992,
+			ServerType: ServerType,
+			Tags:       []string{"0.98", "QQ"},
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	r.ServiceRegistry(checkPort, service)
 
 	fmt.Println("开始注册服务 --- ", ServerType, " 20s 之后注销服务")
 	if err := r.Register(); err != nil {
